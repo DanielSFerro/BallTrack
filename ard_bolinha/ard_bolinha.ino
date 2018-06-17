@@ -8,16 +8,13 @@
 * v_0.3: Pacote rosserial_arduino substituido pela biblioteca rs232.h
 * __________________________________________________________________________
 */
-#include "Buzzer_R2D2.h"
+
 #define motor_esq_DIR 5
 #define motor_esq_PWM 6
 #define motor_dir_DIR 9
 #define motor_dir_PWM 10
 #define largura 50 // Distância entre as rodas (esteiras) em cm
 #define velpwm_conv 7.7 // Constante de conversão de cm/s para PWM
-int indicadorBuzzer = 0;
-int flagAtual=0;
-int flagAntigo=1;
 
 void Mover(int vel_pwm, int dir, int PWM)
 {
@@ -58,7 +55,8 @@ void setup()
   pinMode(motor_esq_DIR,OUTPUT);
   pinMode(motor_dir_PWM,OUTPUT);
   pinMode(motor_dir_DIR,OUTPUT);
-  pinMode(13, OUTPUT);
+  pinMode(12,OUTPUT); //pino que conectará em outro arduino
+  pinMode(11,OUTPUT); //pino que conectará em outro arduino
 }
 void loop()
 {
@@ -87,35 +85,31 @@ void loop()
       case 0:                         // Movimento normal
         Mover(pwm_esq, motor_esq_DIR, motor_esq_PWM);
         Mover(pwm_dir, motor_dir_DIR, motor_dir_PWM);
-        if(indicadorBuzzer==0) r2D2();
-        indicadorBuzzer=1;
-        flagAntigo=0;
+        digitalWrite(LOW,12);
+        digitalWrite(LOW,11);
         break;
     
       case -1:                        // Giro em torno do próprio eixo (esquerda)
         
         Mover(-100, motor_esq_DIR, motor_esq_PWM);
         Mover(100, motor_dir_DIR, motor_dir_PWM);
-        if(indicadorBuzzer==0) catcall();
-        indicadorBuzzer=1;
-        flagAntigo=-1;
+        digitalWrite(HIGH,12);
+        digitalWrite(LOW,11);
         break;
       
       case 1:                         // Giro em torno do próprio eixo (direita)
         
         Mover(100, motor_esq_DIR, motor_esq_PWM);
         Mover(-100, motor_dir_DIR, motor_dir_PWM);
-        if(indicadorBuzzer==0) waka();
-        indicadorBuzzer=1;
-        flagAntigo=1;
+        digitalWrite(LOW,12);
+        digitalWrite(HIGH,11);
         break;
       
       default:                        // Esteira parada
         Mover(0, motor_esq_DIR, motor_esq_PWM);
         Mover(0, motor_dir_DIR, motor_dir_PWM);
-        if(indicadorBuzzer==0) uhoh();
-        indicadorBuzzer=1;
-        flagAntigo=2;
+        digitalWrite(LOW,12);
+        digitalWrite(LOW,11);
         break;
     }
   }
@@ -135,24 +129,9 @@ void serialEvent()
       i = 0;
       vel_linear = atof(strtok(comando,","));
       vel_angular = atof(strtok(NULL,","));
-      flag = atoi(strtok(NULL,","));
+      flag = atoi(strtok(NULL,"\n"));
       stringCompleta = true;
-      
-      switch(flag){
-        case 0:       
-          flagAtual=0;
-        break;
-        case -1:                        
-           flagAtual=-1;
-        break;
-        case 1:                         
-            flagAtual=1;
-        break;
-        default:                      
-            flagAtual=2; 
-        break;
-      }
-      if(flagAtual!=flagAntigo) indicadorBuzzer=0;
+      Serial.flush();
     }
   }
 }
