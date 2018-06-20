@@ -31,13 +31,25 @@ def talker():
 img = np.zeros((300,512,3), dtype=np.uint8)
 cv2.namedWindow('image') 
 
+#take the yaml parameters
+
+with open("./config/HSV.yaml", 'r') as stream:
+	data_loaded = yaml.load(stream)
+	
+Hmin_i = data_loaded["Hmin_v"]
+Hmax_i = data_loaded["Hmax_v"]
+Smin_i = data_loaded["Smin_v"]
+Smax_i = data_loaded["Smax_v"]
+Vmin_i = data_loaded["Vmin_v"]
+Vmax_i = data_loaded["Vmax_v"]
+
 #create trackbars
-cv2.createTrackbar('Hmin', 'image', 0, 255, nothing)
-cv2.createTrackbar('Vmin', 'image', 0, 255, nothing)
-cv2.createTrackbar('Smin', 'image', 0, 255, nothing)
-cv2.createTrackbar('Hmax', 'image', 0, 255, nothing)
-cv2.createTrackbar('Vmax', 'image', 0, 255, nothing)
-cv2.createTrackbar('Smax', 'image', 0, 255, nothing) 
+cv2.createTrackbar('Hmin', 'image', Hmin_i, 179, nothing)
+cv2.createTrackbar('Hmax', 'image', Hmax_i, 179, nothing)
+cv2.createTrackbar('Vmin', 'image', Smin_i, 255, nothing)
+cv2.createTrackbar('Vmax', 'image', Smax_i, 255, nothing) 
+cv2.createTrackbar('Smin', 'image', Vmin_i, 255, nothing)
+cv2.createTrackbar('Smax', 'image', Vmax_i, 255, nothing)
 
 # construct the argument parse and parse the arguments
 ap = argparse.ArgumentParser()
@@ -148,6 +160,19 @@ while True:
 	if key == ord("q"):
 		break
 
+#send the parameters of HSV into the yaml
+
+data = {'Hmin_v' : H_min,
+	'Hmax_v' : H_max,
+	'Smin_v' : S_min,
+	'Smax_v' : S_max,
+	'Vmin_v' : V_min,
+	'Vmax_v' : V_max,
+       }
+
+with io.open('./config/HSV.yaml', 'w', encoding='utf8') as outfile:
+	yaml.dump(data, outfile, default_flow_style=False, allow_unicode=True)
+	
 # cleanup the camera and close any open windows
 camera.release()
 cv2.destroyAllWindows()
