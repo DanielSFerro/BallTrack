@@ -17,7 +17,7 @@ import serial #import the serial library
 ser = serial.Serial() #create an object to read a serial
 ser.baudrate=9600 
 ser.port = '/dev/ttyACM0' #change it if it's isn't the right port for you
-ser.open()
+ser.open() # it opens up the serial comunication
 x=0
 y=0
 
@@ -40,13 +40,12 @@ def callback(data):
     
     y=data.y # get data
     x=data.x # get data
-   	
     vel_linear=0
     vel_angular=0
 
-    if y>350:
+    if y>350: 
 	flag=2 # The ball is too close to the cam
-    elif x<100:
+    elif x<100: 
 	flag=-1 # The robot needs to turn to the left
     elif x>400:
 	flag=1 # The robot needs to turn to the right
@@ -55,15 +54,17 @@ def callback(data):
 	if y<300:
 		vel_linear = 30 #set maximum value for the linear velocity
 	else: 
-		vel_linear= 30 * (400-y) / 400  # the linear velocity is related to the distance between the ball and the camera
+		vel_linear= 30 * (400-y) / 400 # the linear velocity is related to the distance between the ball and the camera
 	if x<340 and x>300:    
    		 vel_angular = 0                
      	else:
         	vel_angular = (x-250) * .4/100
     comando=str(vel_linear)+','+ str(vel_angular)+','+str(flag)+'\n'+'\0' # comando = vel_linear,vel_angular,FLAG_esteira
+
+    ser.write(comando) #send the command to arduino
 	
-    ser.write(comando)  #send the command to arduino
-	
+    rospy.loginfo(comando)
+
     key = cv2.waitKey(1) & 0xFF
 
     #if the 'q' key is pressed, stop the loop

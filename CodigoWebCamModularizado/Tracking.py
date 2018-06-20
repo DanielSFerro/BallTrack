@@ -12,7 +12,7 @@ import cv2
 import rospy
 from geometry_msgs.msg import Point
 
-pos=(0,0)
+pos=(0,0) 
 
 def nothing(x):
 	pass
@@ -21,15 +21,15 @@ def talker():
      pub = rospy.Publisher('chatter', Point, queue_size=10)
      rospy.init_node('talker', anonymous=True) # initialize node
      rate = rospy.Rate(30) # 30hz
-     position=Point()
+     position=Point() 
      position.x=pos[0] # position.x holds the "x" coordinate
-     position.y=pos[1] # position.y holds the "y" coordinate
+     position.y=pos[1]  # position.y holds the "y" coordinate
      pub.publish(position) #send message
      rospy.loginfo(position) #show position on the screen
      rate.sleep()
 
 img = np.zeros((300,512,3), dtype=np.uint8)
-cv2.namedWindow('image')
+cv2.namedWindow('image') 
 
 #create trackbars
 cv2.createTrackbar('Hmin', 'image', 0, 255, nothing)
@@ -37,10 +37,7 @@ cv2.createTrackbar('Vmin', 'image', 0, 255, nothing)
 cv2.createTrackbar('Smin', 'image', 0, 255, nothing)
 cv2.createTrackbar('Hmax', 'image', 0, 255, nothing)
 cv2.createTrackbar('Vmax', 'image', 0, 255, nothing)
-cv2.createTrackbar('Smax', 'image', 0, 255, nothing)
-
-
-#struct
+cv2.createTrackbar('Smax', 'image', 0, 255, nothing) 
 
 # construct the argument parse and parse the arguments
 ap = argparse.ArgumentParser()
@@ -80,8 +77,8 @@ while True:
 	frame = imutils.resize(frame, width=600)
 	# blurred = cv2.GaussianBlur(frame, (11, 11), 0)
 	hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-
-	#get position of the trackbar
+	
+	#get position of the trackbar	
 	H_min= cv2.getTrackbarPos('Hmin','image')
 	V_min= cv2.getTrackbarPos('Vmin','image')
 	S_min= cv2.getTrackbarPos('Smin','image')
@@ -125,7 +122,7 @@ while True:
 			pos=center		
 	# update the points queue
 	pts.appendleft(center)
-	print pos
+	
 	# loop over the set of tracked points
 	for i in xrange(1, len(pts)):
 		# if either of the tracked points are None, ignore
@@ -146,7 +143,7 @@ while True:
 	talker() #send message
 
 	key = cv2.waitKey(1) & 0xFF
-	
+      
 	# if the 'q' key is pressed, stop the loop
 	if key == ord("q"):
 		break

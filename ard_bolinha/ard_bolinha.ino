@@ -66,7 +66,8 @@ void loop()
     float vel_diferencial = vel_angular * largura;
     pwm_esq = velpwm_conv * (vel_linear + vel_diferencial/2);
     pwm_dir = velpwm_conv * (vel_linear - vel_diferencial/2);
- 
+
+    // printa no serial monitor
     Serial.print("L = ");
     Serial.print(vel_linear);
     Serial.print(", A = ");
@@ -85,31 +86,31 @@ void loop()
       case 0:                         // Movimento normal
         Mover(pwm_esq, motor_esq_DIR, motor_esq_PWM);
         Mover(pwm_dir, motor_dir_DIR, motor_dir_PWM);
-        digitalWrite(LOW,12);
-        digitalWrite(LOW,11);
+        digitalWrite(12,LOW); // envia sinal para o Buzzer
+        digitalWrite(11,LOW); // envia sinal para o Buzzer
         break;
     
       case -1:                        // Giro em torno do próprio eixo (esquerda)
         
         Mover(-100, motor_esq_DIR, motor_esq_PWM);
         Mover(100, motor_dir_DIR, motor_dir_PWM);
-        digitalWrite(HIGH,12);
-        digitalWrite(LOW,11);
+        digitalWrite(12,HIGH); // envia sinal para o Buzzer
+        digitalWrite(11,LOW); // envia sinal para o Buzzer
         break;
       
       case 1:                         // Giro em torno do próprio eixo (direita)
         
         Mover(100, motor_esq_DIR, motor_esq_PWM);
         Mover(-100, motor_dir_DIR, motor_dir_PWM);
-        digitalWrite(LOW,12);
-        digitalWrite(HIGH,11);
+        digitalWrite(12,LOW); // envia sinal para o Buzzer
+        digitalWrite(11,HIGH); // envia sinal para o Buzzer
         break;
       
       default:                        // Esteira parada
         Mover(0, motor_esq_DIR, motor_esq_PWM);
         Mover(0, motor_dir_DIR, motor_dir_PWM);
-        digitalWrite(LOW,12);
-        digitalWrite(LOW,11);
+        digitalWrite(12,LOW); // envia sinal para o Buzzer
+        digitalWrite(11,LOW); // envia sinal para o Buzzer
         break;
     }
   }
@@ -118,7 +119,7 @@ void loop()
 
 void serialEvent()
 {
-  if(Serial.available())
+  if(Serial.available()) 
   {
     comando[i] = Serial.read();
     if (comando[i++] == '\n')
@@ -127,9 +128,9 @@ void serialEvent()
         Serial.read();
     
       i = 0;
-      vel_linear = atof(strtok(comando,","));
-      vel_angular = atof(strtok(NULL,","));
-      flag = atoi(strtok(NULL,"\n"));
+      vel_linear = atof(strtok(comando,",")); // Obtém valor da velocidade linear da string comando 
+      vel_angular = atof(strtok(NULL,",")); // Obtém valor da velocidade angular da string comando 
+      flag = atoi(strtok(NULL,"\n")); // Obtém valor do flag da string comando 
       stringCompleta = true;
       Serial.flush();
     }

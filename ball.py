@@ -14,14 +14,16 @@ import serial #import the serial library
 pos=(0,0)
 ser = serial.Serial() #create an object to read a serial
 ser.baudrate=9600 
-ser.port = '/dev/ttyACM1' #change it if it's isn't the right port for you
+ser.port = '/dev/ttyACM0' #change it if it's isn't the right port for you
 ser.open()
+
 def nothing(x):
 	pass
 
 img = np.zeros((300,512,3), dtype=np.uint8)
 cv2.namedWindow('image')
 
+#create trackbars
 cv2.createTrackbar('Hmin', 'image', 0, 255, nothing)
 cv2.createTrackbar('Vmin', 'image', 0, 255, nothing)
 cv2.createTrackbar('Smin', 'image', 0, 255, nothing)
@@ -29,8 +31,6 @@ cv2.createTrackbar('Hmax', 'image', 0, 255, nothing)
 cv2.createTrackbar('Vmax', 'image', 0, 255, nothing)
 cv2.createTrackbar('Smax', 'image', 0, 255, nothing)
 
-
-#struct
 
 # construct the argument parse and parse the arguments
 ap = argparse.ArgumentParser()
@@ -40,7 +40,7 @@ ap.add_argument("-b", "--buffer", type=int, default=64,
 	help="max buffer size")
 args = vars(ap.parse_args())
 
-# define the lower and upper boundaries of the "green"
+# define the lower and upper boundaries of the "orange"
 # ball in the HSV color space, then initialize the
 # list of tracked points
 
@@ -68,21 +68,22 @@ while True:
 	# resize the frame, blur it, and convert it to the HSV
 	# color space
 	frame = imutils.resize(frame, width=600)
-	# blurred = cv2.GaussianBlur(frame, (11, 11), 0)
 	hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+
+	#get position of the trackbar	
 	H_min= cv2.getTrackbarPos('Hmin','image')
 	V_min= cv2.getTrackbarPos('Vmin','image')
 	S_min= cv2.getTrackbarPos('Smin','image')
 	H_max= cv2.getTrackbarPos('Hmax','image')
 	V_max= cv2.getTrackbarPos('Vmax','image')
 	S_max= cv2.getTrackbarPos('Smax','image')
-	greenLower = np.array([H_min,V_min,S_min])
-	greenUpper = np.array([H_max,V_max,S_max])
+	orangeLower = np.array([H_min,V_min,S_min])
+	orangeUpper = np.array([H_max,V_max,S_max])
 
-	# construct a mask for the color "green", then perform
+	# construct a mask for the color "orange", then perform
 	# a series of dilations and erosions to remove any small
 	# blobs left in the mask
-	mask = cv2.inRange(hsv, greenLower, greenUpper)
+	mask = cv2.inRange(hsv, orangeLower, orangeUpper)
 	mask = cv2.erode(mask, None, iterations=2)
 	mask = cv2.dilate(mask, None, iterations=2)
 
@@ -131,32 +132,34 @@ while True:
 	cv2.imshow('mask',mask)
 	
 	key = cv2.waitKey(1) & 0xFF
+	
 	x=pos[0]
 	y=pos[1]
 	vel_linear=0
 	vel_angular=0
 	if y>350:
-		flag=2
+		flag=2  # The ball is too close to the cam
 	elif x<100:
-		flag=-1
+		flag=-1 # The robot needs to turn to the left
 	elif x>400:
-		flag=1
+		flag=1 # The robot needs to turn to the right
 	else:
-		flag=0
+		flag=0 # The ball is in the middle of the screen
 		if y<300:
-			vel_linear = 30
+			vel_linear = 30 #set maximum value for the linear velocity
 		else: 
-			vel_linear= 30 * (400-y) / 400
+			vel_linear= 30 * (400-y) / 400 # the linear velocity is related to the distance between the ball and the camera
 		if x<340 and x>300:    
    		 	vel_angular = 0              
 		else:
         		vel_angular = (x-250) * .4/100
-        comando=str(vel_linear)+','+ str(vel_angular)+','+str(flag)+'\n' #vel_linear,vel_angular,FLAG_esteira
-	#print comando
-	ser.write(comando)
+        comando=str(vel_linear)+','+ str(vel_angular)+','+str(flag)+'\n' #comando = vel_linear,vel_angular,FLAG_esteira
+	
+	ser.write(comando) #send command to arduino
+
 	# if the 'q' key is pressed, stop the loop
 	if key == ord("q"):
-		ser.close()
+		ser.close() #it closes the serial communication
 		break
 
 # cleanup the camera and close any open windows
