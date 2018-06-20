@@ -10,7 +10,10 @@ import argparse
 import imutils
 import cv2
 import rospy
+import yaml
+import io
 from geometry_msgs.msg import Point
+
 
 pos=(0,0) 
 
