@@ -157,11 +157,11 @@ while True:
 	
 	talker() #send message
 
-	key = cv2.waitKey(1) & 0xFF
+	#key = cv2.waitKey(1) & 0xFF
       
 	# if the 'q' key is pressed, stop the loop
-	if key == ord("q"):
-		break
+	#if key == ord("q"):
+	#	break
 
 #send the parameters of HSV into the yaml
 
@@ -178,4 +178,4 @@ while True:
 	
 # cleanup the camera and close any open windows
 camera.release()
-cv2.destroyAllWindows()
+#cv2.destroyAllWindows()
