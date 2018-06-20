@@ -11,33 +11,63 @@ import imutils
 import cv2
 import rospy
 from geometry_msgs.msg import Point
+import freenect
+import yaml
+import io
 
 pos=(0,0)
+def get_video():
+    array,_ = freenect.sync_get_video()
+    array = cv2.cvtColor(array,cv2.COLOR_RGB2BGR)
+    return array
 
 def nothing(x):
 	pass
 
 def talker():
      pub = rospy.Publisher('chatter', Point, queue_size=10)
-     rospy.init_node('talker', anonymous=True) # initialize node
-     rate = rospy.Rate(30) # 30hz
+     rospy.init_node('talker', anonymous=True)
+     rate = rospy.Rate(30) # 10hz
      position=Point()
-     position.x=pos[0] # position.x holds the "x" coordinate
-     position.y=pos[1] # position.y holds the "y" coordinate
-     pub.publish(position) #send message
-     rospy.loginfo(position) #show position on the screen
+     position.x=pos[0]
+     position.y=pos[1]	 
+     position.z=depth[pos[1],pos[0]]
+     pub.publish(position)
+     rospy.loginfo(position)
      rate.sleep()
+
+#funcao para pegar a imagem profundidade do kinect
+def get_depth():
+    array,_ = freenect.sync_get_depth()
+    #serve para suavizar a captura da profundidade
+    #Limitamos o depth para 1023, removendo objetos 
+    #muitos distantes e ruidos.
+    np.clip(array, 0, 2**10 - 1, array)
+    array >>= 2
+    #Transforma o array em 8 bit array
+    array = array.astype(np.uint8)
+    return array
+
+with open("./config/HSV.yaml", 'r') as stream:
+    data_loaded = yaml.load(stream)
+
+Hmin_i = data_loaded["Hmin_v"]
+Hmax_i = data_loaded["Hmax_v"]
+Smin_i = data_loaded["Smin_v"]
+Smax_i = data_loaded["Smax_v"]
+Vmin_i = data_loaded["Vmin_v"]
+Vmax_i = data_loaded["Vmax_v"]
+
 
 img = np.zeros((300,512,3), dtype=np.uint8)
 cv2.namedWindow('image')
 
-#create trackbars
-cv2.createTrackbar('Hmin', 'image', 0, 255, nothing)
-cv2.createTrackbar('Vmin', 'image', 0, 255, nothing)
-cv2.createTrackbar('Smin', 'image', 0, 255, nothing)
-cv2.createTrackbar('Hmax', 'image', 0, 255, nothing)
-cv2.createTrackbar('Vmax', 'image', 0, 255, nothing)
-cv2.createTrackbar('Smax', 'image', 0, 255, nothing)
+cv2.createTrackbar('Hmin', 'image', Hmin_i, 179, nothing)
+cv2.createTrackbar('Hmax', 'image', Hmax_i, 179, nothing)
+cv2.createTrackbar('Smin', 'image', Smin_i, 255, nothing)
+cv2.createTrackbar('Smax', 'image', Smax_i, 255, nothing)
+cv2.createTrackbar('Vmin', 'image', Vmin_i, 255, nothing)
+cv2.createTrackbar('Vmax', 'image', Vmax_i, 255, nothing)
 
 
 #struct
@@ -50,7 +80,7 @@ ap.add_argument("-b", "--buffer", type=int, default=64,
 	help="max buffer size")
 args = vars(ap.parse_args())
 
-# define the lower and upper boundaries of the "orange"
+# define the lower and upper boundaries of the "green"
 # ball in the HSV color space, then initialize the
 # list of tracked points
 
@@ -58,46 +88,48 @@ pts = deque(maxlen=args["buffer"])
 
 # if a video path was not supplied, grab the reference
 # to the webcam
-if not args.get("video", False):
-	camera = cv2.VideoCapture(0)
+# if not args.get("video", False):
+# 	camera = cv2.VideoCapture(1)
 
 # otherwise, grab a reference to the video file
-else:
-	camera = cv2.VideoCapture(args["video"])
+# else:
+# 	camera = cv2.VideoCapture(args["video"])
 
 # keep looping
 while True:
 	# grab the current frame
-	(grabbed, frame) = camera.read()
+	# (grabbed, frame) = camera.read()
 
-	# if we are viewing a video and we did not grab a frame,
-	# then we have reached the end of the video
-	if args.get("video") and not grabbed:
-		break
-
+	# # if we are viewing a video and we did not grab a frame,
+	# # then we have reached the end of the video
+	# if args.get("video") and not grabbed:
+	# 	break
+	frame = get_video()
+	depth = get_depth()
+	#depth = cv2.erode(depth, None, iterations=2)
+	#depth = cv2.dilate(depth, None, iterations=2)
 	# resize the frame, blur it, and convert it to the HSV
 	# color space
-	frame = imutils.resize(frame, width=600)
+	#frame = imutils.resize(frame, width=640, height=480)
 	# blurred = cv2.GaussianBlur(frame, (11, 11), 0)
 	hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-
-	#get position of the trackbar
 	H_min= cv2.getTrackbarPos('Hmin','image')
-	V_min= cv2.getTrackbarPos('Vmin','image')
-	S_min= cv2.getTrackbarPos('Smin','image')
 	H_max= cv2.getTrackbarPos('Hmax','image')
+	V_min= cv2.getTrackbarPos('Vmin','image')
 	V_max= cv2.getTrackbarPos('Vmax','image')
+	S_min= cv2.getTrackbarPos('Smin','image')
 	S_max= cv2.getTrackbarPos('Smax','image')
+	greenLower = np.array([H_min,V_min,S_min])
+	greenUpper = np.array([H_max,V_max,S_max])
 
-	orangeLower = np.array([H_min,V_min,S_min]) #orangeLower holds the minimum values of the range
-	orangeUpper = np.array([H_max,V_max,S_max]) #orangeUpper holds the maximum values of the range
-
-	# construct a mask for the color "orange", then perform
+	# construct a mask for the color "green", then perform
 	# a series of dilations and erosions to remove any small
 	# blobs left in the mask
-	mask = cv2.inRange(hsv, orangeLower, orangeUpper)
-	mask = cv2.erode(mask, None, iterations=2)
-	mask = cv2.dilate(mask, None, iterations=2)
+	element = cv2.getStructuringElement(cv2.MORPH_RECT, (3,3))
+	mask = cv2.inRange(hsv, greenLower, greenUpper)
+	mask = cv2.erode(mask, element, iterations=2)
+	mask = cv2.dilate(mask, element, iterations=2)
+	mask = cv2.erode(mask, element)
 
 	# find contours in the mask and initialize the current
 	# (x, y) center of the ball
@@ -125,7 +157,7 @@ while True:
 			pos=center		
 	# update the points queue
 	pts.appendleft(center)
-	print pos
+	#print pos
 	# loop over the set of tracked points
 	for i in xrange(1, len(pts)):
 		# if either of the tracked points are None, ignore
@@ -143,8 +175,11 @@ while True:
 
 	cv2.imshow('mask',mask)
 	
-	talker() #send message
+	cv2.imshow('Depth image',depth)
 
+	talker()
+
+	#print depth[pos[1],pos[0]]
 	key = cv2.waitKey(1) & 0xFF
 	
 	# if the 'q' key is pressed, stop the loop
@@ -152,5 +187,17 @@ while True:
 		break
 
 # cleanup the camera and close any open windows
-camera.release()
+#camera.release()
+
+data = {'Hmin_v': H_min,
+		'Hmax_v': H_max,
+		'Vmin_v': V_min,
+		'Vmax_v': V_max,
+		'Smin_v': S_min,
+		'Smax_v': S_max,
+        }
+
+with io.open('./config/HSV.yaml', 'w', encoding='utf8') as outfile:
+    yaml.dump(data, outfile, default_flow_style=False, allow_unicode=True)
+
 cv2.destroyAllWindows()

@@ -16,10 +16,11 @@ import serial #import the serial library
 
 ser = serial.Serial() #create an object to read a serial
 ser.baudrate=9600 
-ser.port = '/dev/ttyACM0' #change it if it's isn't the right port for you
+ser.port = '/dev/ttyACM1' #change it if it's isn't the right port for you
 ser.open()
 x=0
 y=0
+z=0
 
 
 def listener():
@@ -37,37 +38,37 @@ def listener():
     rospy.spin()
 
 def callback(data):
-    
-    y=data.y # get data
-    x=data.x # get data
-   	
+    #rospy.loginfo(data)
+    z=data.z
+    x=data.x
+    #print (x,y)	
     vel_linear=0
     vel_angular=0
-
-    if y>350:
-	flag=2 # The ball is too close to the cam
+    if z >250:
+	flag=2
     elif x<100:
-	flag=-1 # The robot needs to turn to the left
+	flag=-1
     elif x>400:
-	flag=1 # The robot needs to turn to the right
+	flag=1
     else:
-	flag=0 # The ball is in the middle of the screen
-	if y<300:
-		vel_linear = 30 #set maximum value for the linear velocity
-	else: 
-		vel_linear= 30 * (400-y) / 400  # the linear velocity is related to the distance between the ball and the camera
-	if x<340 and x>300:    
-   		 vel_angular = 0                
-     	else:
+	flag=0
+	   if z<160:
+		  vel_linear = 30
+	   else: 
+		  vel_linear= 30 * z / 255
+	   if x<340 and x>300:    
+   		   vel_angular = 0                
+        else:
         	vel_angular = (x-250) * .4/100
-    comando=str(vel_linear)+','+ str(vel_angular)+','+str(flag)+'\n'+'\0' # comando = vel_linear,vel_angular,FLAG_esteira
-	
-    ser.write(comando)  #send the command to arduino
+    mensagem="Vel_linear:=" + str(vel_linear)+',' + "Vel_angular:=" + str(vel_angular)+','+ "Flag:=" +str(flag)+ " Intensidade:="+ str(z)+'\n'+'\0' #vel_linear,vel_angular,FLAG_esteira
+    comando =str(vel_linear) + ',' + str(vel_angular) + ',' + str(flag) + '\n' + '\0' #vel_linear,vel_angular,FLAG_esteira
+    rospy.loginfo(mensagem)
+    ser.write(comando)
 	
     key = cv2.waitKey(1) & 0xFF
 
     #if the 'q' key is pressed, stop the loop
     if key == ord("q"):
-	ser.close() # close serial communication
+        ser.close()
 	exit()
 listener()
