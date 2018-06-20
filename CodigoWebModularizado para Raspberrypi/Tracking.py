@@ -39,12 +39,12 @@ img = np.zeros((300,512,3), dtype=np.uint8)
 with open("./config/HSV.yaml", 'r') as stream:
 	data_loaded = yaml.load(stream)
 	
-Hmin = data_loaded["Hmin_v"]
-Hmax = data_loaded["Hmax_v"]
-Smin = data_loaded["Smin_v"]
-Smax = data_loaded["Smax_v"]
-Vmin = data_loaded["Vmin_v"]
-Vmax = data_loaded["Vmax_v"]
+H_min = data_loaded["Hmin_v"]
+H_max = data_loaded["Hmax_v"]
+S_min = data_loaded["Smin_v"]
+S_max = data_loaded["Smax_v"]
+V_min = data_loaded["Vmin_v"]
+V_max = data_loaded["Vmax_v"]
 
 #create trackbars
 #cv2.createTrackbar('Hmin', 'image', Hmin_i, 179, nothing)
