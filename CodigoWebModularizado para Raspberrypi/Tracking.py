@@ -32,7 +32,7 @@ def talker():
      rate.sleep()
 
 img = np.zeros((300,512,3), dtype=np.uint8)
-cv2.namedWindow('image') 
+#cv2.namedWindow('image') 
 
 #take the yaml parameters
 
